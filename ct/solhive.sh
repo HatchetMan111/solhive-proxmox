@@ -24,7 +24,11 @@ set -euo pipefail
 APP="SolHive"
 REPO_RAW_BASE="https://raw.githubusercontent.com/HatchetMan111/solhive-proxmox/main"
 
-HOSTNAME="${HOSTNAME:-solhive}"
+# NOT named HOSTNAME on purpose: bash auto-populates $HOSTNAME with the
+# *Proxmox host's* own hostname at shell startup, so a bare
+# HOSTNAME="${HOSTNAME:-solhive}" here would silently pick up e.g. "Prox"
+# instead of ever falling back to "solhive".
+CT_HOSTNAME="${CT_HOSTNAME:-solhive}"
 CORES="${CORES:-2}"
 RAM="${RAM:-2048}"
 DISK="${DISK:-4}"
@@ -66,7 +70,7 @@ if [[ "$SKIP_CREATE" -eq 0 ]]; then
 
     info "Creating unprivileged SolHive LXC $CTID"
     pct create "$CTID" "$TEMPLATE_STORAGE:vztmpl/$TEMPLATE" \
-        -hostname "$HOSTNAME" \
+        -hostname "$CT_HOSTNAME" \
         -cores "$CORES" -memory "$RAM" \
         -rootfs "$STORAGE:$DISK" \
         -net0 "name=eth0,bridge=$BRIDGE,ip=dhcp" \

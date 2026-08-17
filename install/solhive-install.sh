@@ -10,7 +10,14 @@
 # for catch_errors) when sourced, so we pull it in directly here instead of
 # depending on a FUNCTIONS_FILE_PATH env var from build_container — this
 # project intentionally doesn't use build_container (see ct/solhive.sh).
-set -euo pipefail
+#
+# Deliberately NOT using `set -u` here: install.func's own catch_errors()
+# only does `set -Ee -o pipefail` and adds `-u` itself if STRICT_UNSET=1.
+# Its library functions (e.g. update_os's APT-cacher check) reference
+# $CACHER, which build_container normally exports from the host — we skip
+# build_container, so we export a safe default ourselves instead.
+set -eo pipefail
+export CACHER=no
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)
 color
 verb_ip6
