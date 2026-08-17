@@ -3,11 +3,17 @@
 # Author: HatchetMan111
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://code.solhive.energy/solhive/solhive
-
-source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
+#
+# Runs INSIDE the LXC container (invoked by ct/solhive.sh via pct exec).
+# community-scripts' misc/install.func is generic and self-bootstraps its
+# own dependencies (core.func for color/msg_info/msg_ok, error_handler.func
+# for catch_errors) when sourced, so we pull it in directly here instead of
+# depending on a FUNCTIONS_FILE_PATH env var from build_container — this
+# project intentionally doesn't use build_container (see ct/solhive.sh).
+set -euo pipefail
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)
 color
 verb_ip6
-catch_errors
 setting_up_container
 network_check
 update_os
@@ -16,12 +22,6 @@ update_os
 # Licensed under PolyForm Perimeter License 1.0.1
 
 msg_info "Setting up timezone"
-# The container inherits the Proxmox host's timezone by default (set via
-# build.func during container creation). We only step in with a fallback if
-# that never happened (e.g. a bare template), so the install stays a true
-# one-liner with no interactive prompt. An interactive whiptail list of all
-# ~600 IANA zones doesn't fit usefully in a 16-line dialog and would hang a
-# non-interactive/automated install anyway.
 CURRENT_TZ="$(timedatectl show --property=Timezone --value 2>/dev/null)"
 if [[ -z "$CURRENT_TZ" || "$CURRENT_TZ" == "Etc/UTC" || "$CURRENT_TZ" == "UTC" ]]; then
     timedatectl set-timezone "Europe/Berlin"
@@ -30,7 +30,7 @@ msg_ok "Timezone set to: $(timedatectl show --property=Timezone --value)"
 
 msg_info "Installing Docker"
 if ! command -v docker &>/dev/null; then
-    setup_docker
+    $STD bash -c "curl -fsSL https://get.docker.com | sh"
 fi
 msg_ok "Installed Docker"
 
